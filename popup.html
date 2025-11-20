@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { width: 250px; font-family: Arial; padding: 10px; }
+    label { display: block; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h3>Настройки</h3>
+
+  <label>
+    Интервал обновления (секунды):
+    <input id="interval" type="number" min="1" />
+  </label>
+
+  <button id="saveBtn">Сохранить</button>
+
+  <p id="status"></p>
+
+  <script src="popup.js"></script>
+</body>
+</html>

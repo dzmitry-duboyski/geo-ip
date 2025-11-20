@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "IP Country Flag",
+  "version": "1.0",
+  "description": "Показывает флаг страны текущего внешнего IP.",
+  "permissions": ["alarms", "storage", "tts"],
+  "host_permissions": [
+    "https://ipinfo.io/*",
+    "https://api.ipify.org/*",
+    "https://ipwho.is/*",
+    "https://ipapi.co/*"
+    ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_icon": "icons/error.png",
+    "default_popup": "popup.html"
+  },
+  "web_accessible_resources": [
+  {
+    "resources": ["sounds/alert.mp3"],
+    "matches": ["<all_urls>"]
+  },
+    {
+    "resources": ["icons/*.png"],
+    "matches": ["<all_urls>"]
+  }
+]
+}

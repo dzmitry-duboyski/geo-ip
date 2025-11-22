@@ -2,11 +2,11 @@ TODO:
 - [ ] Fix icons (size)
 - [ ] Update error icon
 - [ ] Add default icon
-- [ ] Update popup
-- [ ] Add clipboard button for IP
+- [x] Update popup
+- [x] Add clipboard button for IP
 - [ ] Add settings (API key)
 - [ ] Add settings (other API)
-- [ ] Add settings (sound)
+- [x] Add settings (sound)
 - [ ] Update tooltip
 - [ ] Update audio alert (add current county name)
 - [ ] Add localization

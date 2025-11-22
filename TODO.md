@@ -13,3 +13,4 @@ TODO:
    - [ ] popup
    - [ ] tooltip
    - [ ] audio alert
+- [ ] Change API provider https://ipinfo.io/ => https://icanhazip.com/

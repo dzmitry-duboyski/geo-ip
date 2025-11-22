@@ -3,25 +3,42 @@ const DEFAULT_INTERVAL_SEC = 3;
 
 let lastCountry = null;
 let updateTimer = null;
+let extensionEnabled = true;
 
-/*  Проигрывание звукового сигнала */
+/* Play alert sound */
 function playAlertSound() {
-  chrome.tts.speak(
-    "Info. Country has changed",
-    {
-      lang: "en-US",
-      rate: 1.0
-    },
-    () => {
-      if (chrome.runtime.lastError) {
-        console.warn("TTS error:", chrome.runtime.lastError.message);
-      }
+  // Check if audio alert is enabled
+  chrome.storage.local.get(["audioAlert"], (res) => {
+    const audioAlertEnabled = res.audioAlert !== false;
+    
+    if (!audioAlertEnabled) {
+      console.log("Audio alert is disabled");
+      return;
     }
-  );
+
+    chrome.tts.speak(
+      "Info. Country has changed",
+      {
+        lang: "en-US",
+        rate: 1.0
+      },
+      () => {
+        if (chrome.runtime.lastError) {
+          console.warn("TTS error:", chrome.runtime.lastError.message);
+        }
+      }
+    );
+  });
 }
 
-/*  Основное обновление IP + иконка */
+/* Main IP update + icon */
 async function updateIPInfo() {
+  // If extension is disabled, skip update
+  if (!extensionEnabled) {
+    console.log("Extension is disabled, skipping update");
+    return;
+  }
+
   try {
     const res = await fetch(API_URL);
     if (!res.ok) throw new Error("HTTP error");
@@ -30,60 +47,90 @@ async function updateIPInfo() {
     const country = data.country;
     const ip = data.ip;
 
-    console.log("Получена страна:", country);
+    console.log("Country received:", country);
 
-    /*  Проверка изменения страны */
+    /* Check for country change */
     if (lastCountry && lastCountry !== country) {
-      console.log(`Страна изменилась: ${lastCountry} → ${country}`);
+      console.log(`Country changed: ${lastCountry} → ${country}`);
       playAlertSound();
     }
 
-    /* обновляем lastCountry */
+    /* Update lastCountry */
     lastCountry = country;
-    chrome.storage.local.set({ lastCountry: country });
+    chrome.storage.local.set({ 
+      lastCountry: country,
+      currentIP: ip,
+      currentCountry: country
+    });
 
     const iconPath = `icons/${country.toLowerCase()}.png`;
-    console.log("Ставим иконку:", iconPath);
+    console.log("Setting icon:", iconPath);
 
     chrome.action.setIcon({ path: iconPath });
     chrome.action.setTitle({
-      title: `Страна: ${country}\nIP: ${ip}`
+      title: `Country: ${country}\nIP: ${ip}`
+    });
+
+    // Update popup if it's open
+    chrome.runtime.sendMessage({ 
+      action: "updatePopup", 
+      ip: ip, 
+      country: country 
+    }).catch(() => {
+      // Popup may be closed, ignore error
     });
 
   } catch (e) {
-    console.warn("Ошибка:", e);
+    console.warn("Error:", e);
     chrome.action.setIcon({ path: "icons/error.png" });
-    chrome.action.setTitle({ title: "Ошибка получения IP" });
+    chrome.action.setTitle({ title: "Error fetching IP" });
   }
 }
 
-/*  Запуск таймера */
+/* Start timer */
 function startTimer() {
-  chrome.storage.local.get(["interval"], (res) => {
+  chrome.storage.local.get(["interval", "extensionEnabled"], (res) => {
     const intervalSec = res.interval || DEFAULT_INTERVAL_SEC;
+    extensionEnabled = res.extensionEnabled !== false;
 
-    console.log("Запуск таймера с интервалом:", intervalSec, "секунд");
+    console.log("Starting timer with interval:", intervalSec, "seconds");
+    console.log("Extension enabled:", extensionEnabled);
 
     if (updateTimer) clearInterval(updateTimer);
-    updateTimer = setInterval(updateIPInfo, intervalSec * 1000);
-
-    updateIPInfo(); // обновление сразу
+    
+    if (extensionEnabled) {
+      updateTimer = setInterval(updateIPInfo, intervalSec * 1000);
+      updateIPInfo(); // Update immediately
+    }
   });
 }
 
-/*  Вспомогательная логика */
+/* Stop timer */
+function stopTimer() {
+  if (updateTimer) {
+    clearInterval(updateTimer);
+    updateTimer = null;
+    console.log("Timer stopped");
+  }
+}
+
+/* Restore last country helper */
 function restoreLastCountry() {
   chrome.storage.local.get(["lastCountry"], (res) => {
     lastCountry = res.lastCountry || null;
-    console.log("Восстановлена lastCountry:", lastCountry);
+    console.log("Restored lastCountry:", lastCountry);
   });
 }
 
-/*  Инициализация */
+/* Initialization */
 chrome.runtime.onInstalled.addListener(() => {
   console.log("onInstalled");
   restoreLastCountry();
-  chrome.storage.local.set({ interval: DEFAULT_INTERVAL_SEC });
+  chrome.storage.local.set({ 
+    interval: DEFAULT_INTERVAL_SEC,
+    extensionEnabled: true,
+    audioAlert: true
+  });
   startTimer();
 });
 
@@ -93,10 +140,23 @@ chrome.runtime.onStartup.addListener(() => {
   startTimer();
 });
 
-/*  Перезапуск по запросу из popup */
+/* Handle messages from popup */
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.action === "restartTimer") {
-    console.log("Перезапуск таймера из popup");
+    console.log("Restarting timer from popup");
     startTimer();
+  } else if (msg.action === "enableExtension") {
+    console.log("Enabling extension");
+    extensionEnabled = true;
+    chrome.storage.local.set({ extensionEnabled: true });
+    startTimer();
+  } else if (msg.action === "disableExtension") {
+    console.log("Disabling extension");
+    extensionEnabled = false;
+    chrome.storage.local.set({ extensionEnabled: false });
+    stopTimer();
+    // Set default icon
+    chrome.action.setIcon({ path: "icons/error.png" });
+    chrome.action.setTitle({ title: "IP Country Flag (Disabled)" });
   }
 });

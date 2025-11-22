@@ -1,23 +1,438 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IP Country Flag</title>
   <style>
-    body { width: 250px; font-family: Arial; padding: 10px; }
-    label { display: block; margin-top: 10px; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 320px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
+    }
+
+    .container {
+      background: #ffffff;
+      border-radius: 0;
+      position: relative;
+    }
+
+    /* Заголовок с переключателем */
+    .header {
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h2 {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    /* Переключатель */
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 26px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.3);
+      transition: 0.3s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #4CAF50;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(24px);
+    }
+
+    /* Блок информации об IP */
+    .info-section {
+      padding: 20px;
+      background: #f8f9fa;
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    .info-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      background: white;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .info-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .info-label {
+      font-size: 12px;
+      color: #6c757d;
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+
+    .info-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ip-clickable {
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .ip-clickable:hover {
+      color: #667eea;
+    }
+
+    .ip-clickable:active {
+      color: #764ba2;
+    }
+
+    .country-flag {
+      font-size: 24px;
+    }
+
+    .info-content {
+      flex: 1;
+    }
+
+    .copy-btn {
+      padding: 8px 12px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.3s;
+      font-weight: 500;
+      min-width: 70px;
+    }
+
+    .copy-btn:hover:not(:disabled) {
+      background: #5568d3;
+    }
+
+    .copy-btn:disabled {
+      background: #ced4da;
+      color: #6c757d;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .copy-btn.copied {
+      background: #4CAF50;
+    }
+
+    /* Блок настроек */
+    .settings-section {
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    .settings-header {
+      padding: 16px 20px;
+      background: white;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.2s;
+    }
+
+    .settings-header:hover {
+      background: #f8f9fa;
+    }
+
+    .settings-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .settings-icon {
+      font-size: 18px;
+    }
+
+    .arrow {
+      transition: transform 0.3s;
+      font-size: 12px;
+      color: #6c757d;
+    }
+
+    .arrow.open {
+      transform: rotate(180deg);
+    }
+
+    .settings-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+      background: #f8f9fa;
+    }
+
+    .settings-content.open {
+      max-height: 280px;
+    }
+
+    .settings-body {
+      padding: 20px;
+    }
+
+    .setting-item {
+      margin-bottom: 16px;
+    }
+
+    .setting-label {
+      display: block;
+      font-size: 13px;
+      color: #495057;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .setting-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid #e9ecef;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+
+    .setting-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .setting-checkbox {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .setting-checkbox input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      margin: 0;
+      margin-right: 10px;
+      accent-color: #667eea;
+    }
+
+    .checkbox-label {
+      font-size: 13px;
+      color: #333;
+      font-weight: 500;
+    }
+
+    .setting-description {
+      margin-top: 6px;
+      margin-left: 28px;
+      font-size: 12px;
+      color: #6c757d;
+      line-height: 1.4;
+    }
+
+    .save-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: opacity 0.3s;
+    }
+
+    .save-btn:hover {
+      opacity: 0.9;
+    }
+
+    .save-btn:active {
+      opacity: 0.8;
+    }
+
+    /* Status message */
+    .status-message {
+      position: absolute;
+      bottom: 45px;
+      left: 0;
+      right: 0;
+      padding: 12px 20px;
+      background: #d4edda;
+      color: #155724;
+      font-size: 13px;
+      text-align: center;
+      font-weight: 500;
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      z-index: 1000;
+      transition: opacity 0.3s, transform 0.3s;
+    }
+
+    .status-message.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Loading state */
+    .loading {
+      color: #6c757d;
+      font-style: italic;
+    }
+
+    /* Footer */
+    .footer {
+      padding: 12px 20px;
+      text-align: center;
+      font-size: 11px;
+      color: #6c757d;
+      background: white;
+    }
   </style>
 </head>
 <body>
-  <h3>Настройки</h3>
+  <div class="container">
+    <!-- Заголовок с переключателем -->
+    <div class="header">
+      <h2>IP Country Flag</h2>
+      <label class="toggle-switch">
+        <input type="checkbox" id="extensionToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
 
-  <label>
-    Интервал обновления (секунды):
-    <input id="interval" type="number" min="1" />
-  </label>
+    <!-- Информация об IP -->
+    <div class="info-section">
+      <div class="info-item">
+        <div class="info-content">
+          <div class="info-label">IP Address</div>
+          <div class="info-value" id="ipValue">
+            <span class="loading">Loading...</span>
+          </div>
+        </div>
+        <button class="copy-btn" id="copyBtn" disabled>Copy</button>
+      </div>
+      
+      <div class="info-item">
+        <div class="info-content">
+          <div class="info-label">Country</div>
+          <div class="info-value" id="countryValue">
+            <span class="loading">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
-  <button id="saveBtn">Сохранить</button>
+    <!-- Блок настроек -->
+    <div class="settings-section">
+      <div class="settings-header" id="settingsHeader">
+        <div class="settings-title">
+          <span class="settings-icon">⚙️</span>
+          Settings
+        </div>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="settings-content" id="settingsContent">
+        <div class="settings-body">
+          <div class="setting-item">
+            <label class="setting-label" for="intervalInput">
+              Update Interval (seconds)
+            </label>
+            <input 
+              type="number" 
+              id="intervalInput" 
+              class="setting-input" 
+              min="1" 
+              max="3600"
+              placeholder="3"
+            />
+          </div>
+          
+          <div class="setting-item">
+            <label class="setting-checkbox">
+              <input 
+                type="checkbox" 
+                id="audioAlertInput" 
+                checked
+              />
+              <span class="checkbox-label">Audio alert on IP change</span>
+            </label>
+            <div class="setting-description">
+              Play sound notification when your IP address changes
+            </div>
+          </div>
+          
+          <button class="save-btn" id="saveBtn">Save Settings</button>
+        </div>
+      </div>
+    </div>
 
-  <p id="status"></p>
+    <!-- Статус сообщение -->
+    <div class="status-message" id="statusMessage">
+      Settings saved successfully!
+    </div>
+
+    <!-- Footer -->
+    <div class="footer" id="footer">
+      Loading version...
+    </div>
+  </div>
 
   <script src="popup.js"></script>
 </body>
